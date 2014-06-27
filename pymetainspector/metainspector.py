@@ -4,6 +4,7 @@
 pymetainspector.MetaInspector
 -------------------
 """
+from .page import Page
 
 try: #Python 3 import
     from urllib.parse import urlparse
@@ -12,8 +13,6 @@ except ImportError: #Fallback to Python 2
 
 import requests
 from pyquery import PyQuery
-from .page import Page
-
 
 def default_request_function(url):
     """
@@ -65,11 +64,9 @@ def parse(html_string, url=None):
         working_page.url = url
 
     dom = PyQuery(html_string)
-    working_page.title = dom("title").text()
+    working_page.from_pyquery(dom)
 
     return working_page
-
-
 
 
 
