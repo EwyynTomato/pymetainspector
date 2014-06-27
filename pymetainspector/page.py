@@ -63,7 +63,7 @@ class Page(object):
     def scheme(self, val):
         """
         Update scheme
-        Should also update:
+        Should update:
             1. url
             2. scheme
             3. root_url
@@ -85,7 +85,7 @@ class Page(object):
     def host(self, val):
         """
         Update host
-        The following would be update:
+        Should update:
             1. url
             2. host
             3. root_url
@@ -107,7 +107,7 @@ class Page(object):
     def root_url(self, val):
         """
         Update root_url
-        Should also update:
+        Should update:
             1. url
             2. scheme
             3. host
