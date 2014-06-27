@@ -7,31 +7,57 @@ Fixtures: mock response for unit test
 from os import path
 from httmock import urlmatch, HTTMock
 
-folder = "test/fixtures"
-def get_file_path(filename):
-    return path.join(folder, filename)
+class _Fixtures(object):
+    def __init__(self):
+        self.html_folder = "test/fixtures/html"
 
+        # Add mock response - hostname pair for our mock response
+        self.mock_response_function_list = []
+        self.add_mock_response_function_list(self.get_mock_request_function("example.com.html", "example.com"))
+        self.add_mock_response_function_list(self.get_mock_request_function("empty.html", "(.*\.?)(?:international|first)\.com$"))
+        self.add_mock_response_function_list(self.get_mock_request_function("pagerankalert.com.html", "(.*\.?)pagerankalert\.com"))
 
-with open(get_file_path("example.com.html")) as f:
-    html_example = f.read()
+    def add_mock_response_function_list(self, mock_request_function):
+        """
+        Add mock request function
+        :param function mock_request_function : See function get_mock_request_function for example
+        """
+        self.mock_response_function_list.append(mock_request_function)
 
-    @urlmatch(netloc=r"example.com")
-    def response_content(url, request):
-        return {'status_code': 200, 'content': str.encode(html_example)}
+    def get_html_file_path(self, filename):
+        """
+        Simply join path and filename, e.g. empty.html -> test/fixtures/html/empty.html
 
+        :param str filename : html filename
+        """
+        return path.join(self.html_folder, filename)
 
-with open(get_file_path("empty.html")) as f:
-    html_empty = f.read()
+    def get_mock_request_function(self, html_file, urlmatch_regex):
+        """
+        Return a function for our mock request, matching given url regex
 
-    @urlmatch(netloc=r"(.*\.?)(?:international|first)\.com$")
-    def empty_content(url, request):
-        return {'status_code': 200, 'content': str.encode(html_empty)}
+        :param str html_file : html file containing our mock response
+        :param str urlmatch_regex : netlock regex for HTTMock
+        :
+        """
+        with open(self.get_html_file_path(html_file)) as f:
+            html_example = f.read()
 
+            @urlmatch(netloc=urlmatch_regex)
+            def response_function(url, request):
+                return {'status_code': 200, 'content': str.encode(html_example)}
 
-def mockrequests(f):
+        return response_function
+
+_httmock_mock_response_function_list = _Fixtures().mock_response_function_list
+
+def mockrequests(func):
+    """
+    Fixture decorator function
+    """
     def inner(*args, **kwargs):
-        with HTTMock(response_content, empty_content):
-            return f(*args, **kwargs)
+        with HTTMock(*_httmock_mock_response_function_list):
+            return func(*args, **kwargs)
     return inner
 
 
