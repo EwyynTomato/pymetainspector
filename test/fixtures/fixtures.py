@@ -13,9 +13,15 @@ class _Fixtures(object):
 
         # Add mock response - hostname pair for our mock response
         self.mock_response_function_list = []
-        self.add_mock_response_function_list(self.get_mock_request_function("example.com.html", "example.com"))
-        self.add_mock_response_function_list(self.get_mock_request_function("empty.html", "(.*\.?)(?:international|first)\.com$"))
-        self.add_mock_response_function_list(self.get_mock_request_function("pagerankalert.com.html", "(.*\.?)pagerankalert\.com"))
+        self.add_mock_response_from_html_and_netloc("example.com.html", "example.com")
+        self.add_mock_response_from_html_and_netloc("empty.html", "(.*\.?)(?:international|first)\.com$")
+        self.add_mock_response_from_html_and_netloc("pagerankalert.com.html", "(.*\.?)pagerankalert\.com")
+        self.add_mock_response_from_html_and_netloc("theonion.com.html", "(.*\.?)theonion\.com(.*)")
+        self.add_mock_response_from_html_and_netloc("youtube.com.html", "(.*\.?)youtube\.com(.*)")
+        self.add_mock_response_from_html_and_netloc("twitter.com.html", "(.*\.?)twitter\.com(.*)")
+
+    def add_mock_response_from_html_and_netloc(self, html_filepath, netloc_regex):
+        self.add_mock_response_function_list(self.get_mock_request_function(html_filepath, netloc_regex))
 
     def add_mock_response_function_list(self, mock_request_function):
         """
