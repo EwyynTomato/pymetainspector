@@ -18,7 +18,7 @@ class Page(PageURL):
         self.author = None
         self.meta = None
         self._meta_tags = None
-        self.description = None
+        self.description = None # Returns <meta name="description" content="...">, or the first long paragraph if no meta description is found
         self.image = None  # Value of content from 1st : <meta property="og:image" content="...">
         self.images = None # List of absolute url from <img src="..." />, in which the value of src shouldn't be empty
         self.feed = None # RSS feed on this page
@@ -40,7 +40,6 @@ class Page(PageURL):
 
         :param PyQuery pqobject : PyQuery object
         """
-        #Fetch: meta - property
         pqmeta = PyQuery(pqobject("meta"))
         self.meta = {}
         self._meta_tags = defaultdict(dict)
@@ -54,14 +53,21 @@ class Page(PageURL):
             self.meta["og:image"] = self.image
             self._meta_tags["property"]["og:image"] = self.image
 
-        #Fetch: list of <img src="...">
+        #Fetch: list of <img src="...">, return them as absolute url
         self.images = [self.to_absolute_url(imgsrc) for imgsrc in
                        OrderedSet([(img.get("src")) for img in pqobject("img") if img.get("src")])] or None
 
-        #Fetch: rss feed
+        #Fetch: rss/atom feed
         feed = pqobject("""[type='application/rss+xml']:first,[type='application/atom+xml']:first""").attr("href")
         feed = self.to_absolute_url(feed) if feed else None
         self.feed = feed
+
+        #Fetch: description, <meta name="description" content="...">
+        self.description = pqmeta("[name='description']").attr("content")
+        if not self.description:
+            long_p_elements  = pqobject[0].xpath("(//p[string-length() >= 120])[1]") #PyQuery doesn't support xpath selector,
+                                                                                     # so we directly use its lxml object here.
+            self.description = long_p_elements[0].text if len(long_p_elements) > 0 else None
 
 
 

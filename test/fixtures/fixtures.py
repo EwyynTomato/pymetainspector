@@ -22,6 +22,7 @@ class _Fixtures(object):
         self.add_mock_response_from_html_and_netloc("iteh.at.html", "(.*\.?)iteh\.at(.*)")
         self.add_mock_response_from_html_and_netloc("tea-tron.com.html", "(.*\.?)tea-tron\.com(.*)")
         self.add_mock_response_from_html_and_netloc("alazan.com.html", "(.*\.?)alazan\.com(.*)")
+        self.add_mock_response_from_html_and_netloc("theonion-no-description.com.html", "theonion-no-description.com")
 
     def add_mock_response_from_html_and_netloc(self, html_filepath, netloc_regex):
         self.add_mock_response_function_list(self.get_mock_request_function(html_filepath, netloc_regex))

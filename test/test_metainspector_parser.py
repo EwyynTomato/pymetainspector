@@ -51,3 +51,17 @@ class ParserTest(unittest.TestCase):
                          "Should get atom feed")
         self.assertIsNone(metainspector.get("http://www.alazan.com").feed,
                          "Should return None if no feed found")
+
+    @fixtures.mockrequests
+    def test_should_find_description(self):
+        self.assertEqual("This is Youtube",
+                         metainspector.get("http://www.youtube.com/watch?v=iaGSSrp49uc").description,
+                         "Should find description from meta description")
+        self.assertEqual("SAN FRANCISCO—In a move expected to revolutionize the mobile device industry, Apple launched its fastest and most powerful iPhone to date Tuesday, an innovative new model that can only be seen by the company's hippest and most dedicated customers. This is secondary text picked up because of a missing meta description.",
+                         metainspector.get("http://theonion-no-description.com").description,
+                         "Should find a secondary description if no meta description")
+
+    
+
+
+
