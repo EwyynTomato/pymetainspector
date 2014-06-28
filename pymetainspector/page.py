@@ -1,132 +1,46 @@
+from orderedset._orderedset import OrderedSet
+from pymetainspector.pageurl import PageURL
+from pyquery import PyQuery
+
 try: #Python 3 import
-    from urllib.parse import urlparse, urlunparse
+    from urllib.parse import urlparse, urlunparse, urljoin
 except ImportError: #Fallback to Python 2
-    from urlparse import urlparse, urlunparse
+    from urlparse import urlparse, urlunparse, urljoin
 
-class Page(object):
-    """
-    Result object containing information from inspected url/html
-    """
-
+class Page(PageURL):
     def __init__(self):
-        self._url = ""
-        self._scheme = ""
-        self._host = ""
-        self._root_url = ""
-        self.title = ""
-        self.links = ""
-        self.internal_links = ""
-        self.external_links = ""
-        self.author = ""
-        self.meta_keywords = ""
-        self.meta_description = ""
-        self.description = ""
-        self.image = ""
-        self.images = ""
-        self.feed = ""
-        self.charset = ""
-        self.content_type = ""
+        super().__init__()
+        self.title = None # Text value of <title>, this is different from <meta property="og:title">
+        self.links = None
+        self.internal_links = None
+        self.external_links = None
+        self.author = None
+        self.meta_keywords = None
+        self.meta_description = None
+        self.description = None
+        self.image = None  # Value of content from 1st : <meta property="og:image" content="...">
+        self.images = None # List of absolute url from <img src="..." />, in which the value of src shouldn't be empty
+        self.feed = None # RSS feed on this page
+        self.charset = None
+        self.content_type = None
 
-    def __repr__(self):
-        return "<Page : %s>" % self.__dict__
-
-    @property
-    def url(self):
-        return self._url
-
-    @url.setter
-    def url(self, val):
+    def from_pyquery(self, pqobject):
         """
-        Parse url and set the url info into Page's object instances
+        Parse meta from pyquery object : default to None if not found
 
-        :type val : str
+        :param PyQuery pqobject : PyQuery object
         """
-        if not urlparse(val).scheme:
-            val = "http://%s" % val # Should use http:// scheme by default
-        parsed_url = urlparse(val)
-        """:type parsed_url : ParseResult"""
+        #Fetch: page title from <title>...</title>
+        self.title = pqobject("title").text() or None
 
-        #- Set: url, scheme, host, root_url
-        self._scheme = parsed_url.scheme if parsed_url.scheme else "http" #Should default to "http"
-        self._host = parsed_url.hostname
-        self._root_url = urlunparse((parsed_url.scheme, parsed_url.netloc, "/", '', '', ''))
-        normalized_path = parsed_url.path if parsed_url.path else "/"
-        self._url = urlunparse((self._scheme, self.host, normalized_path,
-                                parsed_url.params, parsed_url.query, parsed_url.fragment))
+        #Fetch: <meta property="og:image" content="...">
+        self.image = pqobject("meta[property='og:image']:first").attr("content") or None
 
+        #Fetch: list of <img src="...">
+        self.images = [self.to_absolute_url(imgsrc) for imgsrc in
+                       OrderedSet([(img.get("src")) for img in pqobject("img") if img.get("src")])] or None
 
-    @property
-    def scheme(self):
-        return self._scheme
-
-    @scheme.setter
-    def scheme(self, val):
-        """
-        Update scheme
-        Should also update:
-            1. url
-            2. scheme
-            3. root_url
-
-        :type val : str
-        """
-        parsed_origin_url = urlparse(self.url)
-        """:type : ParseResult"""
-
-        #update url: scheme & root_url will also be updated here
-        self.url = urlunparse((val, parsed_origin_url.netloc, parsed_origin_url.path,
-                                parsed_origin_url.params, parsed_origin_url.query, parsed_origin_url.fragment))
-
-    @property
-    def host(self):
-        return self._host
-
-    @host.setter
-    def host(self, val):
-        """
-        Update host
-        The following would be update:
-            1. url
-            2. host
-            3. root_url
-
-        :type val : str
-        """
-        parsed_origin_url = urlparse(self.url)
-        """:type : ParseResult"""
-
-        #update url: host & root_url will also be updated here
-        self.url = urlunparse((parsed_origin_url.scheme, val, parsed_origin_url.path,
-                                parsed_origin_url.params, parsed_origin_url.query, parsed_origin_url.fragment))
-
-    @property
-    def root_url(self):
-        return self._root_url
-
-    @root_url.setter
-    def root_url(self, val):
-        """
-        Update root_url
-        Should also update:
-            1. url
-            2. scheme
-            3. host
-            4. root_url
-
-        :type val : str
-        """
-        parsed_url = urlparse(val)
-        parsed_origin_url = urlparse(self.url)
-        """
-        :type parsed_url : ParseResult
-        :type parsed_origin_url : ParseResult
-        """
-
-        #update url: scheme & host will be updated here
-        self.url = urlunparse((parsed_url.scheme, parsed_url.netloc,
-                               parsed_origin_url.path, parsed_origin_url.params,
-                               parsed_origin_url.query, parsed_origin_url.fragment))
-
-
-
-
+        #Fetch: rss feed
+        feed = pqobject("""[type='application/rss+xml']:first,[type='application/atom+xml']:first""").attr("href")
+        feed = self.to_absolute_url(feed) if feed else None
+        self.feed = feed

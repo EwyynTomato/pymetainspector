@@ -4,6 +4,8 @@
 pymetainspector.MetaInspector
 -------------------
 """
+from .page import Page
+from .pageurl import PageURL
 
 try: #Python 3 import
     from urllib.parse import urlparse
@@ -12,8 +14,6 @@ except ImportError: #Fallback to Python 2
 
 import requests
 from pyquery import PyQuery
-from .page import Page
-
 
 def default_request_function(url):
     """
@@ -40,9 +40,7 @@ def get(url, request_function=default_request_function):
 
     :rtype: Page
     """
-    if not urlparse(url).scheme:
-        # Should use http:// scheme by default
-        url = "http://%s" % url
+    url = PageURL.add_http_scheme_if_scheme_missing(url)
 
     working_response = request_function(url)
     """@type : requests.Response"""
@@ -65,11 +63,9 @@ def parse(html_string, url=None):
         working_page.url = url
 
     dom = PyQuery(html_string)
-    working_page.title = dom("title").text()
+    working_page.from_pyquery(dom)
 
     return working_page
-
-
 
 
 
