@@ -44,14 +44,15 @@ class Page(PageURL):
         self.meta = {}
         self._meta_tags = defaultdict(dict)
 
+        #Fetch meta
+        #TODO:
+        #TODO: description should include og description? e.g. StackOverflow
+
         #Fetch: page title from <title>...</title>
         self.title = pqobject("title").text() or None
 
         #Fetch: <meta property="og:image" content="...">
         self.image = pqmeta("[property='og:image']").attr("content") or None
-        if self.image:
-            self.meta["og:image"] = self.image
-            self._meta_tags["property"]["og:image"] = self.image
 
         #Fetch: list of <img src="...">, return them as absolute url
         self.images = [self.to_absolute_url(imgsrc) for imgsrc in
