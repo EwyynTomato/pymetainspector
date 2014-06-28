@@ -24,6 +24,14 @@ class Page(PageURL):
         self.charset = None
         self.content_type = None
 
+    def from_html(self, html_string):
+        """
+        Parse meta from pyquery object
+
+        :param PyQuery html_string : str
+        """
+        pyquery_object = PyQuery(html_string)
+        self.from_pyquery(pyquery_object)
     def from_pyquery(self, pqobject):
         """
         Parse meta from pyquery object : default to None if not found

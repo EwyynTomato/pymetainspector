@@ -13,7 +13,6 @@ except ImportError: #Fallback to Python 2
     from urlparse import urlparse
 
 import requests
-from pyquery import PyQuery
 
 def default_request_function(url):
     """
@@ -62,8 +61,7 @@ def parse(html_string, url=None):
     if url:
         working_page.url = url
 
-    dom = PyQuery(html_string)
-    working_page.from_pyquery(dom)
+    working_page.from_html(html_string)
 
     return working_page
 
