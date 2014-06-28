@@ -115,12 +115,17 @@ class PageURL(object):
     def is_absolute_url(url):
         return bool(urlparse(url).scheme) and bool(urlparse(url).netloc)
 
+    @staticmethod
+    def add_http_scheme_if_scheme_missing(url):
+        if not urlparse(url).scheme:
+            url = "http:%s%s" % ("" if url.startswith("//") else "//", url) # Should use http:// scheme by default
+        return url
+
     def to_absolute_url(self, url):
         if self.is_absolute_url(url):
             return url
         else:
-            if not urlparse(url).scheme:
-                url = "http://%s" % url # Should use http:// scheme by default
+            url = self.add_http_scheme_if_scheme_missing(url)
             parsed_url = urlparse(url)
             """:type parsed_url : ParseResult"""
 
