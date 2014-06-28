@@ -4,10 +4,10 @@
 Unit test for pymetainspector: parser
 """
 
-import unittest, requests
+import unittest
 from pymetainspector import metainspector
 from test.fixtures import fixtures
-from datetime import datetime
+
 class ParserTest(unittest.TestCase):
     @fixtures.mockrequests
     def test_basic_scrape_hastitle_noimage(self):
@@ -36,8 +36,18 @@ class ParserTest(unittest.TestCase):
                          "Should find all page images")
 
         result = metainspector.get("https://twitter.com/markupvalidator")
-        self.assertEqual(6, len(result.images), "Should find 6 images on twitter")
+        self.assertEqual(6, len(result.images), "Should find 6 images on twitter (image without src should be ignored")
         self.assertEqual("https://twimg0-a.akamaihd.net/profile_images/2380086215/fcu46ozay5f5al9kdfvq_reasonably_small.png; https://twimg0-a.akamaihd.net/profile_images/2380086215/fcu46ozay5f5al9kdfvq_normal.png; https://twimg0-a.akamaihd.net/profile_images/2293774732/v0pgo4xpdd9rou2xq5h0_normal.png; https://twimg0-a.akamaihd.net/profile_images/1538528659/jaime_nov_08_normal.jpg; https://si0.twimg.com/sticky/default_profile_images/default_profile_6_mini.png; https://twimg0-a.akamaihd.net/a/1342841381/images/bigger_spinner.gif",
                          "; ".join(result.images),
                          "Should find images on twitter")
 
+    @fixtures.mockrequests
+    def test_get_rss_feed(self):
+        self.assertEqual("http://www.iteh.at/de/rss/",
+                         metainspector.get("http://www.iteh.at").feed,
+                         "Should get rss feed")
+        self.assertEqual("http://www.tea-tron.com/jbravo/blog/feed/",
+                         metainspector.get("http://www.tea-tron.com/jbravo/blog/").feed,
+                         "Should get atom feed")
+        self.assertIsNone(metainspector.get("http://www.alazan.com").feed,
+                         "Should return None if no feed found")

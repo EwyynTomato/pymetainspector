@@ -5,6 +5,7 @@ pymetainspector.MetaInspector
 -------------------
 """
 from .page import Page
+from .pageurl import PageURL
 
 try: #Python 3 import
     from urllib.parse import urlparse
@@ -39,9 +40,7 @@ def get(url, request_function=default_request_function):
 
     :rtype: Page
     """
-    if not urlparse(url).scheme:
-        # Should use http:// scheme by default
-        url = "http://%s" % url
+    url = PageURL.add_http_scheme_if_scheme_missing(url)
 
     working_response = request_function(url)
     """@type : requests.Response"""

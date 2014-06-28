@@ -27,6 +27,8 @@ class UrlTest(unittest.TestCase):
     def test_should_use_http_as_default_scheme(self):
         self.assertEqual("http://example.com/", metainspector.get("example.com").url,
                          "Should use http:// as a default scheme")
+        self.assertEqual("http://example.com/", metainspector.get("//example.com").url,
+                         "Should use http:// as a default scheme on omitted scheme url")
 
     @fixtures.mockrequests
     def test_should_accept_url_with_international_characters(self):
