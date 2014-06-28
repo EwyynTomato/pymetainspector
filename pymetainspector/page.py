@@ -1,3 +1,4 @@
+from collections import defaultdict
 from orderedset._orderedset import OrderedSet
 from pymetainspector.pageurl import PageURL
 from pyquery import PyQuery
@@ -15,8 +16,8 @@ class Page(PageURL):
         self.internal_links = None
         self.external_links = None
         self.author = None
-        self.meta_keywords = None
-        self.meta_description = None
+        self.meta = None
+        self._meta_tags = None
         self.description = None
         self.image = None  # Value of content from 1st : <meta property="og:image" content="...">
         self.images = None # List of absolute url from <img src="..." />, in which the value of src shouldn't be empty
@@ -32,17 +33,26 @@ class Page(PageURL):
         """
         pyquery_object = PyQuery(html_string)
         self.from_pyquery(pyquery_object)
+
     def from_pyquery(self, pqobject):
         """
-        Parse meta from pyquery object : default to None if not found
+        Parse meta from pyquery object : values default to None if not found
 
         :param PyQuery pqobject : PyQuery object
         """
+        #Fetch: meta - property
+        pqmeta = PyQuery(pqobject("meta"))
+        self.meta = {}
+        self._meta_tags = defaultdict(dict)
+
         #Fetch: page title from <title>...</title>
         self.title = pqobject("title").text() or None
 
         #Fetch: <meta property="og:image" content="...">
-        self.image = pqobject("meta[property='og:image']:first").attr("content") or None
+        self.image = pqmeta("[property='og:image']").attr("content") or None
+        if self.image:
+            self.meta["og:image"] = self.image
+            self._meta_tags["property"]["og:image"] = self.image
 
         #Fetch: list of <img src="...">
         self.images = [self.to_absolute_url(imgsrc) for imgsrc in
@@ -52,3 +62,10 @@ class Page(PageURL):
         feed = pqobject("""[type='application/rss+xml']:first,[type='application/atom+xml']:first""").attr("href")
         feed = self.to_absolute_url(feed) if feed else None
         self.feed = feed
+
+
+
+    @property
+    def meta_tags(self):
+        """Return non-default dict of self._meta_tags"""
+        return dict(self._meta_tags) if self._meta_tags else None
