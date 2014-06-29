@@ -1,7 +1,8 @@
-from collections import defaultdict
+from collections import namedtuple
 from orderedset._orderedset import OrderedSet
 from pymetainspector.pageurl import PageURL
 from pyquery import PyQuery
+import logging, lxml
 
 try: #Python 3 import
     from urllib.parse import urlparse, urlunparse, urljoin
@@ -17,7 +18,7 @@ class Page(PageURL):
         self.external_links = None
         self.author = None
         self.meta = None
-        self._meta_tags = None
+        self.meta_tags = None
         self.description = None # Returns <meta name="description" content="...">, or the first long paragraph if no meta description is found
         self.image = None  # Value of content from 1st : <meta property="og:image" content="...">
         self.images = None # List of absolute url from <img src="..." />, in which the value of src shouldn't be empty
@@ -41,12 +42,9 @@ class Page(PageURL):
         :param PyQuery pqobject : PyQuery object
         """
         pqmeta = PyQuery(pqobject("meta"))
-        self.meta = {}
-        self._meta_tags = defaultdict(dict)
 
         #Fetch meta
-        #TODO:
-        #TODO: description should include og description? e.g. StackOverflow
+        (self.meta_tags, self.meta) = self.get_meta(pqmeta)
 
         #Fetch: page title from <title>...</title>
         self.title = pqobject("title").text() or None
@@ -64,15 +62,40 @@ class Page(PageURL):
         self.feed = feed
 
         #Fetch: description, <meta name="description" content="...">
+        #TODO: Should description also include og description? e.g. StackOverflow
         self.description = pqmeta("[name='description']").attr("content")
         if not self.description:
             long_p_elements  = pqobject[0].xpath("(//p[string-length() >= 120])[1]") #PyQuery doesn't support xpath selector,
                                                                                      # so we directly use its lxml object here.
             self.description = long_p_elements[0].text if len(long_p_elements) > 0 else None
 
+    @staticmethod
+    def get_meta(pqmeta):
+        """
+        Return PyQuery meta node into:
+            1. full dictionary of meta tags' attribute and their corresponding content
+            2. flat dictionary form of meta attributes and their content
+
+        :param PyQuery pqmeta : PyQuery containing only meta tags
+        :rtype: _MetaStruct
+        """
+        meta_tags = {}
+        meta_short = {}
+        for meta in pqmeta: #: type meta: lxml.html.HtmlElement
+            try:
+                metadict = dict(meta.items())
+                metacontent = metadict.pop("content")
+                for attribute in metadict:
+                    attribute_value = metadict[attribute]
+                    metadict[attribute] = { attribute_value : metacontent }
+                    meta_short[attribute_value] = metacontent
+                meta_tags.update(metadict)
+            except (KeyError, IndexError):
+                logging.warning("Malformed meta : %s" % lxml.html.tostring(meta))
+
+        return _MetaStruct(meta_tags, meta_short)
 
 
-    @property
-    def meta_tags(self):
-        """Return non-default dict of self._meta_tags"""
-        return dict(self._meta_tags) if self._meta_tags else None
+_MetaStruct = namedtuple("_MetaStruct", "meta_tags meta_short")
+
+
